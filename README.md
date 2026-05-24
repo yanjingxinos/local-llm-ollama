@@ -223,6 +223,23 @@ python3 scripts/delegation_mix.py examples/delegation_mix.example.json \
 
 这里的占比是 `work units`，不是精确 token 数。本地模型占比代表它承担了多少候选摘要、提取、测试想法、轻量扫描等工作；主控模型占比代表监督、review、风险判断、最终合并等工作。
 
+查看本地模型真实 token/耗时消耗：
+
+```bash
+python3 scripts/local_usage.py
+python3 scripts/local_usage.py --recent 5
+```
+
+新的本地模型调用会记录：
+
+- prompt tokens
+- output tokens
+- total local tokens
+- total duration
+- output tokens/s
+
+注意：主控云端模型的真实 token 消耗通常不能由这个本地工具直接读取；这里能精确记录的是 Ollama 本地模型消耗。主控节省量可用“本地 tokens + 本地承担 work units”近似评估。
+
 按任务类型建议占比：
 
 ```bash
@@ -273,6 +290,7 @@ task_records/YYYYMMDD-HHMMSS-task-title/
 - `TASK_SUMMARY.md`：本地模型生成的任务结束归档正文。
 - `ARCHIVE_REVIEW.md`：主控模型轻量 review 清单。
 - `WORK_SPLIT.md`：主控/本地模型占比统计。
+- `LOCAL_MODEL_USAGE.md`：本地模型真实 token 和耗时统计。
 - `work_split.plan.json`：任务拆分计划。
 - `work_split.result.json`：机器可读统计结果。
 - `LOCAL_RUNS_EXCERPT.md`：最近本地模型输出摘录。

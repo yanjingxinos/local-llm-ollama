@@ -129,6 +129,36 @@ python3 scripts/suggest_work_split.py --profile archive
 - 不可外包：风险 review、最终实现判断、文件修改。
 ```
 
+### 1.7 真实本地模型消耗统计
+
+`work units` 是计划口径；Ollama token 统计是真实本地模型调用口径。
+
+新的本地模型调用会记录：
+
+- prompt tokens
+- output tokens
+- total local tokens
+- total duration
+- output tokens/s
+
+查看汇总：
+
+```bash
+python3 scripts/local_usage.py
+python3 scripts/local_usage.py --recent 5
+```
+
+任务归档会额外生成：
+
+```text
+LOCAL_MODEL_USAGE.md
+```
+
+注意：这个工具不能直接读取云端主控模型 token。主控模型节省量应表达为：
+
+- 精确口径：本地模型实际消耗了多少 token/耗时。
+- 近似口径：这些本地 token 对应的摘要、提取、候选测试、归档整理若不分派，将由主控模型承担。
+
 ### 2. 本地模型执行子任务
 
 用脚本调用 Ollama：
@@ -224,6 +254,7 @@ task_records/YYYYMMDD-HHMMSS-task-title/
 - `TASK_SUMMARY.md`
 - `ARCHIVE_REVIEW.md`
 - `WORK_SPLIT.md`
+- `LOCAL_MODEL_USAGE.md`
 - `work_split.plan.json`
 - `work_split.result.json`
 - `LOCAL_RUNS_EXCERPT.md`

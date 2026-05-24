@@ -6,3 +6,5 @@ __pycache__/
 runs/
 task_records/
 
+# Keep local usage metrics out of git by default.
+*.metrics.json

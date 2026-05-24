@@ -113,6 +113,56 @@ def collect_recent_runs(limit: int) -> str:
     return "\n\n".join(chunks)
 
 
+def collect_recent_metrics(limit: int) -> list[dict]:
+    runs_dir = ROOT / "runs"
+    if not runs_dir.exists() or limit <= 0:
+        return []
+
+    paths = sorted(runs_dir.glob("*.metrics.json"), key=lambda path: path.stat().st_mtime, reverse=True)[:limit]
+    metrics = []
+    for path in paths:
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+            data["path"] = str(path)
+            metrics.append(data)
+        except json.JSONDecodeError:
+            continue
+    return metrics
+
+
+def usage_report(metrics: list[dict]) -> str:
+    if not metrics:
+        return "# Local Model Usage\n\nNo local model token metrics were available.\n"
+
+    prompt_tokens = sum(item.get("usage", {}).get("prompt_tokens", 0) for item in metrics)
+    output_tokens = sum(item.get("usage", {}).get("output_tokens", 0) for item in metrics)
+    total_tokens = sum(item.get("usage", {}).get("total_tokens", 0) for item in metrics)
+    total_seconds = sum(item.get("usage", {}).get("total_duration_seconds", 0) for item in metrics)
+
+    lines = [
+        "# Local Model Usage",
+        "",
+        f"- Calls: {len(metrics)}",
+        f"- Prompt tokens: {prompt_tokens}",
+        f"- Output tokens: {output_tokens}",
+        f"- Total local tokens: {total_tokens}",
+        f"- Total duration: {total_seconds:.2f}s",
+        "",
+        "## Calls",
+        "",
+    ]
+    for item in metrics:
+        usage = item.get("usage", {})
+        lines.append(
+            f"- `{item.get('model', 'unknown')}` `{item.get('mode', 'unknown')}`: "
+            f"{usage.get('total_tokens', 0)} tokens "
+            f"({usage.get('prompt_tokens', 0)} prompt + {usage.get('output_tokens', 0)} output), "
+            f"{usage.get('total_duration_seconds', 0):.2f}s"
+        )
+    lines.append("")
+    return "\n".join(lines)
+
+
 def write_json(path: pathlib.Path, data: dict) -> None:
     path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
@@ -174,14 +224,24 @@ def main() -> int:
 
     notes = read_text(pathlib.Path(args.notes_file) if args.notes_file else None)
     local_outputs = collect_recent_runs(args.recent_runs)
+    recent_metrics = collect_recent_metrics(args.recent_runs)
 
     summary_source = "controller-template"
     if args.summary_model:
         prompt = build_summary_prompt(args.title, plan, split_md, local_outputs, notes)
         try:
-            summary = local_delegate.call_ollama(args.summary_model, prompt)
+            summary_result = local_delegate.call_ollama_result(args.summary_model, prompt)
+            summary = summary_result["response"]
             summary_source = f"local-model:{args.summary_model}"
             (record_dir / "local_summary_prompt.txt").write_text(prompt, encoding="utf-8")
+            summary_metrics = {
+                "mode": "archive",
+                "model": args.summary_model,
+                "task": f"Archive summary for {args.title}",
+                "usage": summary_result["usage"],
+            }
+            write_json(record_dir / "local_summary_metrics.json", summary_metrics)
+            recent_metrics.append(summary_metrics)
         except SystemExit as exc:
             summary = f"本地模型汇总不可用：{exc}\n\n{split_md}"
     else:
@@ -230,6 +290,8 @@ Pending.
         (record_dir / "CONTROLLER_NOTES.md").write_text(notes, encoding="utf-8")
     if local_outputs:
         (record_dir / "LOCAL_RUNS_EXCERPT.md").write_text(local_outputs, encoding="utf-8")
+    usage_md = usage_report(recent_metrics)
+    (record_dir / "LOCAL_MODEL_USAGE.md").write_text(usage_md, encoding="utf-8")
 
     print(f"Task record created: {record_dir}")
     print()

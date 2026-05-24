@@ -85,7 +85,28 @@ def build_prompt(mode: str, task: str) -> str:
 """
 
 
-def call_ollama(model: str, prompt: str) -> str:
+def usage_from_result(result: dict) -> dict:
+    prompt_tokens = int(result.get("prompt_eval_count") or 0)
+    output_tokens = int(result.get("eval_count") or 0)
+    total_tokens = prompt_tokens + output_tokens
+    total_duration_ns = int(result.get("total_duration") or 0)
+    eval_duration_ns = int(result.get("eval_duration") or 0)
+    prompt_duration_ns = int(result.get("prompt_eval_duration") or 0)
+    total_seconds = total_duration_ns / 1_000_000_000 if total_duration_ns else 0
+    eval_seconds = eval_duration_ns / 1_000_000_000 if eval_duration_ns else 0
+
+    return {
+        "prompt_tokens": prompt_tokens,
+        "output_tokens": output_tokens,
+        "total_tokens": total_tokens,
+        "total_duration_seconds": total_seconds,
+        "prompt_eval_duration_seconds": prompt_duration_ns / 1_000_000_000 if prompt_duration_ns else 0,
+        "eval_duration_seconds": eval_seconds,
+        "output_tokens_per_second": output_tokens / eval_seconds if eval_seconds else 0,
+    }
+
+
+def call_ollama_result(model: str, prompt: str) -> dict:
     payload = {
         "model": model,
         "prompt": prompt,
@@ -102,22 +123,52 @@ def call_ollama(model: str, prompt: str) -> str:
     try:
         with urllib.request.urlopen(request, timeout=600) as response:
             result = json.loads(response.read().decode("utf-8"))
-            return result.get("response", "")
+            return {
+                "response": result.get("response", ""),
+                "raw": result,
+                "usage": usage_from_result(result),
+            }
     except urllib.error.URLError as exc:
         raise SystemExit(f"Cannot connect to Ollama: {exc}") from exc
 
 
-def save_run(mode: str, model: str, task: str, prompt: str, response: str) -> pathlib.Path:
+def call_ollama(model: str, prompt: str) -> str:
+    return call_ollama_result(model, prompt)["response"]
+
+
+def metrics_markdown(usage: dict) -> str:
+    return f"""## Local Model Usage
+
+- Prompt tokens: `{usage['prompt_tokens']}`
+- Output tokens: `{usage['output_tokens']}`
+- Total tokens: `{usage['total_tokens']}`
+- Total duration: `{usage['total_duration_seconds']:.2f}s`
+- Output speed: `{usage['output_tokens_per_second']:.2f} tokens/s`
+"""
+
+
+def save_run(mode: str, model: str, task: str, prompt: str, response: str, usage: dict | None = None) -> pathlib.Path:
     RUNS_DIR.mkdir(exist_ok=True)
     safe_model = model.replace(":", "-").replace("/", "-")
     timestamp = dt.datetime.now().strftime("%Y%m%d-%H%M%S")
     path = RUNS_DIR / f"{timestamp}-{mode}-{safe_model}.md"
+    usage = usage or {
+        "prompt_tokens": 0,
+        "output_tokens": 0,
+        "total_tokens": 0,
+        "total_duration_seconds": 0,
+        "prompt_eval_duration_seconds": 0,
+        "eval_duration_seconds": 0,
+        "output_tokens_per_second": 0,
+    }
     path.write_text(
         f"""# Local Delegation Run
 
 - Mode: `{mode}`
 - Model: `{model}`
 - Time: `{timestamp}`
+
+{metrics_markdown(usage)}
 
 ## Task
 
@@ -135,6 +186,22 @@ def save_run(mode: str, model: str, task: str, prompt: str, response: str) -> pa
 """,
         encoding="utf-8",
     )
+    metrics_path = path.with_suffix(".metrics.json")
+    metrics_path.write_text(
+        json.dumps(
+            {
+                "mode": mode,
+                "model": model,
+                "time": timestamp,
+                "task": task,
+                "usage": usage,
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
     return path
 
 
@@ -146,11 +213,14 @@ def main() -> int:
     args = parser.parse_args()
 
     prompt = build_prompt(args.mode, args.task)
-    response = call_ollama(args.model, prompt)
-    path = save_run(args.mode, args.model, args.task, prompt, response)
+    result = call_ollama_result(args.model, prompt)
+    response = result["response"]
+    usage = result["usage"]
+    path = save_run(args.mode, args.model, args.task, prompt, response, usage)
 
     print(response)
     print()
+    print(metrics_markdown(usage))
     print(f"Saved: {path}")
     return 0
 
