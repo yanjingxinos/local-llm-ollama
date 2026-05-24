@@ -7,6 +7,7 @@
   "stop_local_models_after_task": true,
   "default_summary_model": "qwen3:8b",
   "default_general_model": "qwen3:8b",
-  "default_reasoning_model": "deepseek-r1:8b"
+  "default_reasoning_model": "deepseek-r1:8b",
+  "controller_selects_local_model": true,
+  "model_profiles_path": "config/model_profiles.json"
 }
-

@@ -185,6 +185,7 @@ $local-model-delegation 帮我 ...
 
 - 本地模型占比不低于 50%。
 - 主控模型占比不低于 30%。
+- 主控模型按任务类型选择本次委派最合适的本地模型。
 - 任务结束归档由本地模型写。
 - 主控模型只轻量 review 归档产物。
 - 任务结束后停止本地模型。
@@ -232,6 +233,22 @@ python3 scripts/suggest_work_split.py --profile archive
 ```
 
 主控模型可以调整默认占比，但必须说明原因。
+
+主控模型选择本地模型：
+
+```bash
+python3 scripts/select_model.py summarize
+python3 scripts/select_model.py test-ideas
+python3 scripts/select_model.py compare --quality quality
+```
+
+默认模型选择：
+
+- 摘要、提取、草稿、归档：`qwen3:8b`
+- 候选测试、bug 假设、小范围推理：`deepseek-r1:8b`
+- 更高质量通用整理/对比：`qwen3:14b`
+- 更高质量推理候选：`deepseek-r1:14b`
+- 多模态候选任务：`gemma3:12b`
 
 任务结束后创建归档文件夹、写入占比统计，并让本地模型生成汇总草稿：
 

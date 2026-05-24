@@ -145,6 +145,28 @@ python3 scripts/suggest_work_split.py --profile archive
 runs/YYYYMMDD-HHMMSS-mode-model.md
 ```
 
+### 2.1 主控模型选择本地模型
+
+主控模型必须为每个子任务选择合适的本地模型，而不是固定使用同一个模型。
+
+默认规则：
+
+- `qwen3:8b`：摘要、提取、文档草稿、归档正文、轻量反方检查。
+- `deepseek-r1:8b`：候选测试、bug 假设、小范围推理。
+- `qwen3:14b`：质量优先的整理、对比、归档。
+- `deepseek-r1:14b`：质量优先的候选推理。
+- `gemma3:12b`：多模态候选任务。
+
+选择脚本：
+
+```bash
+python3 scripts/select_model.py summarize
+python3 scripts/select_model.py test-ideas
+python3 scripts/select_model.py compare --quality quality
+```
+
+如果推荐模型未安装，主控模型应选择已安装的相近模型，并说明降级原因。
+
 ### 3. 主模型 review
 
 主模型必须判断：

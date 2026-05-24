@@ -1,0 +1,67 @@
+{
+  "models": {
+    "qwen3:8b": {
+      "role": "default-general",
+      "best_for": [
+        "summarize",
+        "extract",
+        "draft",
+        "archive",
+        "brainstorm",
+        "critic-lite"
+      ],
+      "notes": "Default fast general model for Chinese/English summaries, extraction, archive writing, and bounded candidate work."
+    },
+    "deepseek-r1:8b": {
+      "role": "default-reasoning",
+      "best_for": [
+        "test-ideas",
+        "bug-hypotheses",
+        "local-reasoning",
+        "algorithm-notes"
+      ],
+      "notes": "Use for bounded reasoning, candidate test cases, and small bug hypothesis lists. Do not use for final risk review."
+    },
+    "gemma3:12b": {
+      "role": "general-multimodal",
+      "best_for": [
+        "general",
+        "multimodal",
+        "image-description"
+      ],
+      "notes": "Use when the local task involves image-oriented or multimodal candidate work, if supported by the local flow."
+    },
+    "qwen3:14b": {
+      "role": "higher-quality-general",
+      "best_for": [
+        "longer-summarize",
+        "higher-quality-draft",
+        "compare",
+        "archive"
+      ],
+      "notes": "Use when quality matters more than speed and the task is still bounded."
+    },
+    "deepseek-r1:14b": {
+      "role": "higher-quality-reasoning",
+      "best_for": [
+        "harder-test-ideas",
+        "bug-hypotheses",
+        "bounded-reasoning"
+      ],
+      "notes": "Use for harder bounded reasoning if speed is less important."
+    }
+  },
+  "fallbacks": {
+    "summarize": "qwen3:8b",
+    "extract": "qwen3:8b",
+    "draft": "qwen3:8b",
+    "archive": "qwen3:8b",
+    "critic-lite": "qwen3:8b",
+    "test-ideas": "deepseek-r1:8b",
+    "bug-hypotheses": "deepseek-r1:8b",
+    "local-reasoning": "deepseek-r1:8b",
+    "compare": "qwen3:14b",
+    "multimodal": "gemma3:12b"
+  }
+}
+
