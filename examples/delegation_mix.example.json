@@ -1,0 +1,39 @@
+{
+  "policy": {
+    "min_controller_pct": 30,
+    "min_local_pct": 50
+  },
+  "tasks": [
+    {
+      "name": "主控模型理解目标、识别风险边界、制定分派计划",
+      "owner": "controller",
+      "units": 2
+    },
+    {
+      "name": "本地模型摘要需求和输入材料",
+      "owner": "local",
+      "units": 2
+    },
+    {
+      "name": "本地模型生成候选测试用例",
+      "owner": "local",
+      "units": 2
+    },
+    {
+      "name": "本地模型做 critic-lite 候选遗漏扫描",
+      "owner": "local",
+      "units": 1
+    },
+    {
+      "name": "主控模型 review 本地输出并丢弃不可靠内容",
+      "owner": "controller",
+      "units": 2
+    },
+    {
+      "name": "主控模型完成风险 review、最终判断和合并",
+      "owner": "controller",
+      "units": 1
+    }
+  ]
+}
+

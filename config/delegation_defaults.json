@@ -1,0 +1,12 @@
+{
+  "enabled_when_skill_requested": true,
+  "min_local_pct": 50,
+  "min_controller_pct": 30,
+  "archive_writer": "local-model",
+  "archive_review": "controller-light-review",
+  "stop_local_models_after_task": true,
+  "default_summary_model": "qwen3:8b",
+  "default_general_model": "qwen3:8b",
+  "default_reasoning_model": "deepseek-r1:8b"
+}
+
