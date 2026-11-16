@@ -147,7 +147,7 @@ def metrics_markdown(usage: dict) -> str:
 """
 
 
-def save_run(mode: str, model: str, task: str, prompt: str, response: str, usage: dict | None = None) -> pathlib.Path:
+def save_run(mode: str, model: str, task: str, prompt: str, response: str, usage=None) -> pathlib.Path:
     RUNS_DIR.mkdir(exist_ok=True)
     safe_model = model.replace(":", "-").replace("/", "-")
     timestamp = dt.datetime.now().strftime("%Y%m%d-%H%M%S")

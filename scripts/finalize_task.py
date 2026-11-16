@@ -21,7 +21,7 @@ def slugify(text: str) -> str:
     return slug[:60] or "task"
 
 
-def read_text(path: pathlib.Path | None) -> str:
+def read_text(path) -> str:
     if not path:
         return ""
     return path.read_text(encoding="utf-8")
